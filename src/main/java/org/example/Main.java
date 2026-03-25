@@ -6,15 +6,16 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
 
 public class Main {
-
-    //tried also doing more but this either overflows the java heap (5000) or is just very, very slow (2000)
-    static int[] vertexNumbers = {100, 500, 1000};
+    static int[] vertexNumbers = {100, 500, 1000, 5000};
+    static int MAX_FAIL_PERCENT = 75;
     public static void main(String[] args) {
         ArrayList<Double> estimates = new ArrayList<>();
         for (int nOfVerticies : vertexNumbers) {
 
             //iterated approximation -- we will 'fail' rc if it's corresponding r doesn't connect 25% of random graphs
-            double maxRc = Math.sqrt(2*nOfVerticies); // maximal as here all edges should be connected
+            //In almost all random cases we will have r_c < 3, and when I had maxRc set to a much larger number (namely sqrt(2) times sqrt(n), which makes total graph)
+            //to guarantee correctness, I found that this contains most of the computational time, so I changed it slightly.
+            double maxRc = 3;
             double minRc = 0;
 
             while (maxRc - minRc > 0.0001) {
@@ -29,11 +30,15 @@ public class Main {
 
                     if(!GraphTests.isConnected(graph)) {
                         failCount++;
+                        if(failCount > MAX_FAIL_PERCENT) {
+                            //no point checking further
+                            break;
+                        }
                     }
                 }
 
-                if(failCount > 75) {
-                    //our current r is too small, fails too often (> 75%)
+                if(failCount > MAX_FAIL_PERCENT) {
+                    //our current r is too small, fails too often
                     minRc = estimateRc;
                 } else {
                     //This rc connects often, but could it be smaller?
@@ -49,7 +54,7 @@ public class Main {
         for (Double d : estimates) {
             sum += d;
         }
-        double average = sum/3;
+        double average = sum/4;
         System.out.println("Final estimate: " + average);
 
 
