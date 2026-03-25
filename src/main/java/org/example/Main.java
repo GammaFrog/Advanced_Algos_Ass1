@@ -13,14 +13,15 @@ public class Main {
         ArrayList<Double> estimates = new ArrayList<>();
         for (int nOfVerticies : vertexNumbers) {
 
-            //iterated approximation -- we will 'fail' rc if it's corresponding r doesn't connect 95% of random graphs
+            //iterated approximation -- we will 'fail' rc if it's corresponding r doesn't connect 25% of random graphs
             double maxRc = Math.sqrt(2*nOfVerticies); // maximal as here all edges should be connected
             double minRc = 0;
 
             while (maxRc - minRc > 0.0001) {
 
-                double EstimateRc = (maxRc + minRc) / 2;
-                double r = EstimateRc / (Math.sqrt(nOfVerticies));
+                //we will test the middle point of our bounds
+                double estimateRc = (maxRc + minRc) / 2;
+                double r = estimateRc / (Math.sqrt(nOfVerticies));
                 int failCount = 0;
 
                 for (int i = 0; i < 100; i++) {
@@ -31,16 +32,16 @@ public class Main {
                     }
                 }
 
-                if(failCount > 5) {
-                    //our current r is too small, fails too often (> 5%)
-                    minRc = EstimateRc;
+                if(failCount > 75) {
+                    //our current r is too small, fails too often (> 75%)
+                    minRc = estimateRc;
                 } else {
                     //This rc connects often, but could it be smaller?
-                    maxRc = EstimateRc;
+                    maxRc = estimateRc;
                 }
             }
             estimates.add(maxRc);
-            System.out.println(nOfVerticies + ": \n 95% confidence of connection:" + maxRc);
+            System.out.println(nOfVerticies + ": \n 25% confidence of connection:" + maxRc);
         }
 
         //Find average estimate
@@ -56,16 +57,23 @@ public class Main {
     }
 
 
+    /**
+     * This is like the helper function from the pseudocode:
+     * It makes a random graph of n vertices, with edges if they are within some distance
+     * **/
     static Graph<EuclidPair, DefaultEdge> constructRandomGraph(int n, double distance) {
         Graph<EuclidPair, DefaultEdge> graph = new DefaultUndirectedGraph<>(DefaultEdge.class);
         //make n random points in [0,1]^2:
         for (int i = 0; i < n; i++) {
             double x = Math.random();
-            double y =Math.random();
+            double y = Math.random();
 
             EuclidPair pair = new EuclidPair(x, y);
 
+            //add random vertex to graph
             graph.addVertex(pair);
+
+            //Add edges to this new vertex
             for (EuclidPair otherVertex : graph.vertexSet()) {
                 if(pair.distanceTo(otherVertex) < distance) {
                     graph.addEdge(pair, otherVertex);
